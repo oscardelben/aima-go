@@ -9,7 +9,7 @@ import (
 
 type Sum struct{}
 
-func (p Sum) State() interface{} {
+func (p Sum) InitialState() interface{} {
   return 1
 }
 
@@ -17,15 +17,18 @@ func (p Sum) GoalState(x interface{}) bool {
   return x.(int) == 5
 }
 
-func (p Sum) Expand(node *Node) []*Node {
-  newNode := &Node{
-    Parent: node,
-    Cost: node.Cost + 1,
-    State: node.State.(int) + 2,
-    Action: "sum 2",
-  }
+func (p Sum) Result(state interface{}, action interface{}) interface{} {
+  return state.(int) + 2
+}
 
-  return []*Node{ newNode }
+func (p Sum) StepCost(state interface{}, action interface{}) int {
+  return 1
+}
+
+func (p Sum) Actions(state interface{}) []interface{} {
+  a := make([]interface{}, 0)
+  a = append(a, "sum 2")
+  return a
 }
 
 func (p Sum) Hash(x interface{}) string {
@@ -55,7 +58,7 @@ func TestTreeSearch(t *testing.T) {
 
 type SlidePuzzle struct{}
 
-func (p SlidePuzzle) State() interface{} {
+func (p SlidePuzzle) InitialState() interface{} {
   state := [][]int{
     []int{ 7, 2, 4 },
     []int{ 5, 0, 6 },
@@ -69,102 +72,73 @@ func (p SlidePuzzle) GoalState(x interface{}) bool {
   return p.Hash(x) == "012345678"
 }
 
-func (p SlidePuzzle) Expand(node *Node) []*Node {
+func (p SlidePuzzle) Result(state interface{}, action interface{}) interface{} {
+  st := state.([][]int)
 
-  state := node.State.([][]int)
+  s := [][]int{
+    []int{0, 0, 0},
+    []int{0, 0, 0},
+    []int{0, 0, 0},
+  }
 
-  var x, y int
+  for i := 0; i < 3; i++ {
+    for j := 0; j < 3; j++ {
+      s[i][j] = st[i][j]
+    }
+  }
+
+   var x, y int
   // get zero position
   for i := 0; i < 3; i++ {
     for j := 0; j < 3; j++ {
-      if state[i][j] == 0 {
+      if st[i][j] == 0 {
         x = i
         y = j
       }
     }
   }
 
-  newState := func() [][]int {
-    s := [][]int{
-      []int{0, 0, 0},
-      []int{0, 0, 0},
-      []int{0, 0, 0},
-    }
+  switch action.(string) {
+  case "up":
+    s[x-1][y], s[x][y] = s[x][y], s[x-1][y]
+  case "down":
+    s[x+1][y], s[x][y] = s[x][y], s[x+1][y]
+  case "left":
+    s[x][y], s[x][y-1] = s[x][y-1], s[x][y]
+  case "right":
+    s[x][y], s[x][y+1] = s[x][y+1], s[x][y]
+  }
+  return s
+}
 
-    for i := 0; i < 3; i++ {
-      for j := 0; j < 3; j++ {
-        s[i][j] = state[i][j]
+func (p SlidePuzzle) StepCost(state interface{}, action interface{}) int {
+  return 1
+}
+
+func (p SlidePuzzle) Actions(state interface{}) []interface{} {
+  actions := make([]interface{}, 0)
+
+  st := state.([][]int)
+
+  var x, y int
+  // get zero position
+  for i := 0; i < 3; i++ {
+    for j := 0; j < 3; j++ {
+      if st[i][j] == 0 {
+        x = i
+        y = j
       }
     }
-
-    return s
   }
 
-  nodes := []*Node{}
+  if x > 0 { actions = append(actions, "up") }
+  if x < 2 { actions = append(actions, "down") }
+  if y > 0 { actions = append(actions, "left") }
+  if y < 2 { actions = append(actions, "right") }
 
-  // up
-  if x > 0 {
-    s := newState()
-    s[x-1][y], s[x][y] = s[x][y], s[x-1][y]
-
-    n := &Node{
-      Parent: node,
-      Cost: node.Cost + 1,
-      State: s,
-      Action: "up",
-    }
-
-    nodes = append(nodes, n)
-  }
-
-  // down
-  if x < 2 {
-    s := newState()
-    s[x+1][y], s[x][y] = s[x][y], s[x+1][y]
-
-    n := &Node{
-      Parent: node,
-      Cost: node.Cost + 1,
-      State: s,
-      Action: "down",
-    }
-
-    nodes = append(nodes, n)
-  }
-
-  // left
-  if y > 0 {
-    s := newState()
-    s[x][y], s[x][y-1] = s[x][y-1], s[x][y]
-
-    n := &Node{
-      Parent: node,
-      Cost: node.Cost + 1,
-      State: s,
-      Action: "left",
-    }
-
-    nodes = append(nodes, n)
-  }
-
-  // right
-  if y < 2 {
-    s := newState()
-    s[x][y], s[x][y+1] = s[x][y+1], s[x][y]
-
-    n := &Node{
-      Parent: node,
-      Cost: node.Cost + 1,
-      State: s,
-      Action: "right",
-    }
-
-    nodes = append(nodes, n)
-  }
-
-
-  return nodes
+  return actions
 }
+
 
 func (p SlidePuzzle) Hash(x interface{}) string {
   str := ""

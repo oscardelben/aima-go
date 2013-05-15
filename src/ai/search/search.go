@@ -1,10 +1,19 @@
 package search
 
+// TODO:  USE POINTERS
+
 type Problem interface {
-  State() interface{}
+  // The initial state of the problem
+  InitialState() interface{}
   GoalState(interface{}) bool
-  Expand(*Node) []*Node
-  Hash(interface{}) string // this is only really needed for GraphSearch
+  // A serialize version of state to use for caching
+  Hash(interface{}) string
+  // The state that results from calling problem(state, action)
+  Result(interface{}, interface{}) interface{}
+  // The cost of calling problem(state, action)
+  StepCost(interface{}, interface{}) int
+  // The actions that are possible from state
+  Actions(interface{}) []interface{}
 }
 
 type Node struct {
@@ -14,8 +23,19 @@ type Node struct {
   Cost int
 }
 
+
+func ChildNode(problem Problem, parent *Node, action interface{}) *Node {
+  return &Node{
+    State: problem.Result(parent.State, action),
+    Parent: parent,
+    Action: action,
+    Cost: parent.Cost + problem.StepCost(parent.State, action),
+  }
+}
+
+
 func TreeSearch(problem Problem) *Node {
-  node := &Node{ State: problem.State() }
+  node := &Node{ State: problem.InitialState() }
   frontier := []*Node{ node }
 
   for {
@@ -30,17 +50,17 @@ func TreeSearch(problem Problem) *Node {
       return leaf
     }
 
-    nodes := problem.Expand(leaf)
-    frontier = append(frontier, nodes...)
+    for _, action := range problem.Actions(leaf.State) {
+      frontier = append(frontier, ChildNode(problem, leaf, action))
+    }
   }
 
   return nil
 }
 
 
-// Add 8 puzzle test
 func GraphSearch(problem Problem) *Node {
-  state := problem.State()
+  state := problem.InitialState()
   node := &Node{ State: state }
 
   frontier := []*Node{ node }
@@ -65,7 +85,8 @@ func GraphSearch(problem Problem) *Node {
     h := problem.Hash(leaf.State)
     explored[h] = true
 
-    for _, node := range problem.Expand(leaf) {
+    for _, action := range problem.Actions(leaf.State) {
+      node := ChildNode(problem, leaf, action)
       h := problem.Hash(node.State)
 
       _, exp := explored[h]
