@@ -162,7 +162,7 @@ func TestGraphSearch(t *testing.T) {
     t.FailNow()
   }
 
-  if problem.Hash(solution.State) != "012345678" {
+  if solution.hash != "012345678" {
     t.Fail()
   }
 
@@ -170,6 +170,24 @@ func TestGraphSearch(t *testing.T) {
     t.Errorf("expected %d, got %d", 26, solution.Cost)
   }
 }
+
+func TestBreadthFirstSearch(t *testing.T) {
+  problem := SlidePuzzle{}
+  solution := BreadthFirstSearch(problem)
+
+  if solution == nil {
+    t.FailNow()
+  }
+
+  if solution.hash != "012345678" {
+    t.Fail()
+  }
+
+  if solution.Cost != 26 {
+    t.Errorf("expected %d, got %d", 26, solution.Cost)
+  }
+}
+
 
 
 // Priority Queue

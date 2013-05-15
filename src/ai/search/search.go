@@ -1,5 +1,9 @@
 package search
 
+import (
+  "container/heap"
+)
+
 // TODO:  USE POINTERS
 
 type Problem interface {
@@ -27,11 +31,13 @@ type Node struct {
 
 
 func ChildNode(problem Problem, parent *Node, action interface{}) *Node {
+  state := problem.Result(parent.State, action)
   return &Node{
-    State: problem.Result(parent.State, action),
+    State: state,
     Parent: parent,
     Action: action,
     Cost: parent.Cost + problem.StepCost(parent.State, action),
+    hash: problem.Hash(state),
   }
 }
 
@@ -61,17 +67,17 @@ func TreeSearch(problem Problem) *Node {
 }
 
 
-// This Graph Search Algorithm uses a breadth first algorithm
+// General Graph Search Algorithm
 func GraphSearch(problem Problem) *Node {
   state := problem.InitialState()
-  node := &Node{ State: state }
+  h := problem.Hash(state)
+  node := &Node{ State: state, hash: h }
 
   frontier := []*Node{ node } // used as a FIFO queue
   frontierCache := map[interface{}]bool{} // for fast lookup
   explored := map[interface{}]bool{}
 
-  h := problem.Hash(state)
-  frontierCache[h] = true
+  frontierCache[node.hash] = true
 
   for {
     if len(frontier) == 0 {
@@ -85,20 +91,115 @@ func GraphSearch(problem Problem) *Node {
       return leaf
     }
 
-    h := problem.Hash(leaf.State)
-    explored[h] = true
+    explored[leaf.hash] = true
 
     for _, action := range problem.Actions(leaf.State) {
       node := ChildNode(problem, leaf, action)
-      h := problem.Hash(node.State)
 
-      _, exp := explored[h]
-      _, front := frontierCache[h]
+      _, exp := explored[node.hash]
+      _, front := frontierCache[node.hash]
 
       if !exp && !front {
         frontier = append(frontier, node)
+        frontierCache[node.hash] = true
       }
     }
+  }
+
+  return nil
+}
+
+// Breadth First Search - very similar to a standard Graph Search Algorithm
+
+
+func BreadthFirstSearch(problem Problem) *Node {
+  state := problem.InitialState()
+  h := problem.Hash(state)
+  node := &Node{ State: state, hash: h }
+
+  if problem.GoalState(state) {
+    return node
+  }
+
+  frontier := []*Node{ node } // used as a FIFO queue
+  frontierCache := map[interface{}]bool{} // for fast lookup
+  explored := map[interface{}]bool{}
+
+  frontierCache[node.hash] = true
+
+  for {
+    if len(frontier) == 0 {
+      break // no solution
+    }
+
+    leaf := frontier[0]
+    frontier = frontier[1:]
+
+    explored[leaf.hash] = true
+
+    for _, action := range problem.Actions(leaf.State) {
+      node := ChildNode(problem, leaf, action)
+
+      _, exp := explored[node.hash]
+      _, front := frontierCache[node.hash]
+
+      if !exp && !front {
+        if problem.GoalState(node.State) {
+          return node
+        }
+
+        frontier = append(frontier, node)
+        frontierCache[node.hash] = true
+      }
+    }
+  }
+
+  return nil
+}
+
+
+// Expands nodes with lower cost first
+func UniformCostSearch(problem Problem) *Node {
+  state := problem.InitialState()
+  h := problem.Hash(state)
+  node := &Node{ State: state, hash: h }
+
+  frontier := &PriorityQueue{}
+  heap.Init(frontier)
+  heap.Push(frontier, node)
+
+  frontierCache := map[interface{}]bool{} // for fast lookup
+  explored := map[interface{}]bool{}
+
+  frontierCache[node.hash] = true
+
+  for {
+    if frontier.Len() == 0 {
+      break // no solution
+    }
+
+    leaf := heap.Pop(frontier).(*Node)
+
+    if problem.GoalState(leaf.State) {
+      return leaf
+    }
+
+    explored[leaf.hash] = true
+
+    for _, action := range problem.Actions(leaf.State) {
+      node := ChildNode(problem, leaf, action)
+
+      _, exp := explored[node.hash]
+      _, front := frontierCache[node.hash]
+
+      if !exp && !front {
+        heap.Push(frontier, node)
+        frontierCache[node.hash] = true
+      } else {
+        frontier.SwapIfLowerCost(node)
+      }
+    }
+
   }
 
   return nil
