@@ -3,6 +3,7 @@ package search
 import (
   "testing"
   "strconv"
+  "container/heap"
 )
 
 // TREE SEARCH
@@ -168,4 +169,54 @@ func TestGraphSearch(t *testing.T) {
   if solution.Cost != 26 {
     t.Errorf("expected %d, got %d", 26, solution.Cost)
   }
+}
+
+
+// Priority Queue
+
+func TestPriorityQueue(t *testing.T) {
+  p := &PriorityQueue{}
+  heap.Init(p)
+
+  heap.Push(p, &Node{ Cost: 2 })
+  heap.Push(p, &Node{ Cost: 5 })
+  heap.Push(p, &Node{ Cost: 1 })
+  heap.Push(p, &Node{ Cost: 3 })
+
+  var n *Node
+
+  n = heap.Pop(p).(*Node)
+  if n.Cost != 1 { t.FailNow() }
+
+  n = heap.Pop(p).(*Node)
+  if n.Cost != 2 { t.FailNow() }
+
+  n = heap.Pop(p).(*Node)
+  if n.Cost != 3 { t.FailNow() }
+
+  n = heap.Pop(p).(*Node)
+  if n.Cost != 5 { t.FailNow() }
+
+}
+
+
+func TestPriorityQueueSwap(t *testing.T) {
+  p := &PriorityQueue{}
+  heap.Init(p)
+
+  heap.Push(p, &Node{ Cost: 2, hash: "abc" })
+  heap.Push(p, &Node{ Cost: 5, hash: "cba" })
+
+  p.SwapIfLowerCost(&Node{ Cost: 4, hash: "cba" })
+
+  var n *Node
+
+  n = heap.Pop(p).(*Node)
+  if n.Cost != 2 { t.FailNow() }
+
+  n = heap.Pop(p).(*Node)
+  if n.Cost != 4 { t.FailNow() }
+
+  if p.Len() != 0 { t.FailNow() }
+
 }

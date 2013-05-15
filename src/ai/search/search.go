@@ -21,6 +21,8 @@ type Node struct {
   Parent *Node
   Action interface{}
   Cost int
+  index int // used in a priority queue
+  hash string
 }
 
 
@@ -59,11 +61,12 @@ func TreeSearch(problem Problem) *Node {
 }
 
 
+// This Graph Search Algorithm uses a breadth first algorithm
 func GraphSearch(problem Problem) *Node {
   state := problem.InitialState()
   node := &Node{ State: state }
 
-  frontier := []*Node{ node }
+  frontier := []*Node{ node } // used as a FIFO queue
   frontierCache := map[interface{}]bool{} // for fast lookup
   explored := map[interface{}]bool{}
 
