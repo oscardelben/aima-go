@@ -27,8 +27,8 @@ type Node struct {
   State interface{}
   Parent *Node
   Action interface{}
-  index int // used in a priority queue
-  hash string
+  index int // used in the priority queue
+  hash string // a string representation of state
   Cost float64 // also used as g()
   h float64 // estimated cost of the cheapest path from state to goal
   f float64 // Cost + h(), used for example in A* search
@@ -167,6 +167,7 @@ func BreadthFirstSearch(problem Problem) *Node {
 }
 
 // Expands nodes with lower cost first
+// If your problem implements H() this is the same as A* Search
 func UniformCostSearch(problem Problem) *Node {
   state := problem.InitialState()
   h := problem.Hash(state)

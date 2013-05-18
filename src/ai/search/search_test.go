@@ -3,64 +3,10 @@ package search
 import (
   "testing"
   "strconv"
-  "container/heap"
+  "math"
 )
 
-// TREE SEARCH
-
-type Sum struct{}
-
-func (p Sum) InitialState() interface{} {
-  return 1
-}
-
-func (p Sum) GoalState(x interface{}) bool {
-  return x.(int) == 5
-}
-
-func (p Sum) Result(state interface{}, action interface{}) interface{} {
-  return state.(int) + 2
-}
-
-func (p Sum) StepCost(state interface{}, action interface{}) float64 {
-  return 1
-}
-
-func (p Sum) Actions(state interface{}) []interface{} {
-  a := make([]interface{}, 0)
-  a = append(a, "sum 2")
-  return a
-}
-
-func (p Sum) Hash(x interface{}) string {
-  return ""
-}
-
-func (p Sum) H(x interface{}) float64 {
-  return 0
-}
-
-
-
-func TestTreeSearch(t *testing.T) {
-  problem := Sum{}
-  solution := TreeSearch(problem)
-
-  if solution == nil {
-    t.FailNow()
-  }
-
-  if solution.State.(int) != 5 {
-    t.Errorf("expected %d, got %d", 5, solution.State.(int))
-  }
-
-  if solution.Cost != 2 {
-    t.Errorf("expected %d, got %d", 2, solution.Cost)
-  }
-}
-
-// GRAPH SEARCH
-
+// PROBLEM DEFINITION
 
 type SlidePuzzle struct{}
 
@@ -158,31 +104,97 @@ func (p SlidePuzzle) Hash(x interface{}) string {
   return str
 }
 
+var expected = map[int][]int{
+    0: []int{0, 0},
+    1: []int{0, 1},
+    2: []int{0, 2},
+    3: []int{1, 0},
+    4: []int{1, 1},
+    5: []int{1, 2},
+    6: []int{2, 0},
+    7: []int{2, 1},
+    8: []int{2, 2},
+  }
+
 func (p SlidePuzzle) H(x interface{}) float64 {
-  return 0
+  // manhattan distance
+  var total float64 = 0
+
+  state := x.([][]int)
+
+  for i := 0; i < 3; i++ {
+    for j := 0; j < 3; j++ {
+      if state[i][j] != 0 {
+        exp := expected[state[i][j]]
+        total += math.Abs(float64(i - exp[0]))
+        total += math.Abs(float64(j - exp[1]))
+      }
+    }
+  }
+
+  return total
 }
+
+
+// END PROBLEM DEFINITION
+
+func TestTreeSearch(t *testing.T) {
+  problem := SlidePuzzle{}
+  solution := TreeSearch(problem)
+
+  testSolution(t, solution)
+}
+
 
 func TestGraphSearch(t *testing.T) {
   problem := SlidePuzzle{}
   solution := GraphSearch(problem)
 
-  if solution == nil {
-    t.FailNow()
-  }
-
-  if solution.hash != "012345678" {
-    t.Fail()
-  }
-
-  if solution.Cost != 2 {
-    t.Errorf("expected %d, got %v", 2, solution.Cost)
-  }
+  testSolution(t, solution)
 }
 
 func TestBreadthFirstSearch(t *testing.T) {
   problem := SlidePuzzle{}
   solution := BreadthFirstSearch(problem)
 
+  testSolution(t, solution)
+}
+
+func TestUniformCostSearch(t *testing.T) {
+  problem := SlidePuzzle{}
+  solution := UniformCostSearch(problem)
+
+  testSolution(t, solution)
+}
+
+func TestDepthLimitSearch(t *testing.T) {
+  problem := SlidePuzzle{}
+
+  _, err := DepthLimitedSearch(problem, 1)
+  if err == nil {
+    t.Fail()
+  }
+
+  solution, _ := DepthLimitedSearch(problem, 2)
+
+  testSolution(t, solution)
+}
+
+func TestIterativeDeepeningSearch(t *testing.T) {
+  problem := SlidePuzzle{}
+  solution := IterativeDeepeningSearch(problem)
+
+  testSolution(t, solution)
+}
+
+func TestRecursiveBestFirstSearch(t *testing.T) {
+  problem := SlidePuzzle{}
+  solution := RecursiveBestFirstSearch(problem)
+
+  testSolution(t, solution)
+}
+
+func testSolution(t *testing.T, solution *Node) {
   if solution == nil {
     t.FailNow()
   }
@@ -194,55 +206,4 @@ func TestBreadthFirstSearch(t *testing.T) {
   if solution.Cost != 2 {
     t.Errorf("expected %d, got %v", 2, solution.Cost)
   }
-}
-
-
-
-// Priority Queue
-
-func TestPriorityQueue(t *testing.T) {
-  p := &PriorityQueue{}
-  heap.Init(p)
-
-  heap.Push(p, &Node{ h: 2 })
-  heap.Push(p, &Node{ h: 5 })
-  heap.Push(p, &Node{ h: 1 })
-  heap.Push(p, &Node{ h: 3 })
-
-  var n *Node
-
-  n = heap.Pop(p).(*Node)
-  if n.h != 1 { t.FailNow() }
-
-  n = heap.Pop(p).(*Node)
-  if n.h != 2 { t.FailNow() }
-
-  n = heap.Pop(p).(*Node)
-  if n.h != 3 { t.FailNow() }
-
-  n = heap.Pop(p).(*Node)
-  if n.h != 5 { t.FailNow() }
-
-}
-
-
-func TestPriorityQueueSwap(t *testing.T) {
-  p := &PriorityQueue{}
-  heap.Init(p)
-
-  heap.Push(p, &Node{ h: 2, hash: "abc" })
-  heap.Push(p, &Node{ h: 5, hash: "cba" })
-
-  p.SwapIfLowerCost(&Node{ h: 4, hash: "cba" })
-
-  var n *Node
-
-  n = heap.Pop(p).(*Node)
-  if n.h != 2 { t.FailNow() }
-
-  n = heap.Pop(p).(*Node)
-  if n.h != 4 { t.FailNow() }
-
-  if p.Len() != 0 { t.FailNow() }
-
 }
