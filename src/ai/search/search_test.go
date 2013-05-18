@@ -22,7 +22,7 @@ func (p Sum) Result(state interface{}, action interface{}) interface{} {
   return state.(int) + 2
 }
 
-func (p Sum) StepCost(state interface{}, action interface{}) int {
+func (p Sum) StepCost(state interface{}, action interface{}) float64 {
   return 1
 }
 
@@ -35,6 +35,11 @@ func (p Sum) Actions(state interface{}) []interface{} {
 func (p Sum) Hash(x interface{}) string {
   return ""
 }
+
+func (p Sum) H(x interface{}) float64 {
+  return 0
+}
+
 
 
 func TestTreeSearch(t *testing.T) {
@@ -61,9 +66,9 @@ type SlidePuzzle struct{}
 
 func (p SlidePuzzle) InitialState() interface{} {
   state := [][]int{
-    []int{ 7, 2, 4 },
-    []int{ 5, 0, 6 },
-    []int{ 8, 3, 1 },
+    []int{ 1, 4, 2 },
+    []int{ 3, 0, 5 },
+    []int{ 6, 7, 8 },
   }
 
   return state
@@ -112,7 +117,7 @@ func (p SlidePuzzle) Result(state interface{}, action interface{}) interface{} {
   return s
 }
 
-func (p SlidePuzzle) StepCost(state interface{}, action interface{}) int {
+func (p SlidePuzzle) StepCost(state interface{}, action interface{}) float64 {
   return 1
 }
 
@@ -153,6 +158,9 @@ func (p SlidePuzzle) Hash(x interface{}) string {
   return str
 }
 
+func (p SlidePuzzle) H(x interface{}) float64 {
+  return 0
+}
 
 func TestGraphSearch(t *testing.T) {
   problem := SlidePuzzle{}
@@ -166,8 +174,8 @@ func TestGraphSearch(t *testing.T) {
     t.Fail()
   }
 
-  if solution.Cost != 26 {
-    t.Errorf("expected %d, got %d", 26, solution.Cost)
+  if solution.Cost != 2 {
+    t.Errorf("expected %d, got %v", 2, solution.Cost)
   }
 }
 
@@ -183,8 +191,8 @@ func TestBreadthFirstSearch(t *testing.T) {
     t.Fail()
   }
 
-  if solution.Cost != 26 {
-    t.Errorf("expected %d, got %d", 26, solution.Cost)
+  if solution.Cost != 2 {
+    t.Errorf("expected %d, got %v", 2, solution.Cost)
   }
 }
 
@@ -196,24 +204,24 @@ func TestPriorityQueue(t *testing.T) {
   p := &PriorityQueue{}
   heap.Init(p)
 
-  heap.Push(p, &Node{ Cost: 2 })
-  heap.Push(p, &Node{ Cost: 5 })
-  heap.Push(p, &Node{ Cost: 1 })
-  heap.Push(p, &Node{ Cost: 3 })
+  heap.Push(p, &Node{ h: 2 })
+  heap.Push(p, &Node{ h: 5 })
+  heap.Push(p, &Node{ h: 1 })
+  heap.Push(p, &Node{ h: 3 })
 
   var n *Node
 
   n = heap.Pop(p).(*Node)
-  if n.Cost != 1 { t.FailNow() }
+  if n.h != 1 { t.FailNow() }
 
   n = heap.Pop(p).(*Node)
-  if n.Cost != 2 { t.FailNow() }
+  if n.h != 2 { t.FailNow() }
 
   n = heap.Pop(p).(*Node)
-  if n.Cost != 3 { t.FailNow() }
+  if n.h != 3 { t.FailNow() }
 
   n = heap.Pop(p).(*Node)
-  if n.Cost != 5 { t.FailNow() }
+  if n.h != 5 { t.FailNow() }
 
 }
 
@@ -222,18 +230,18 @@ func TestPriorityQueueSwap(t *testing.T) {
   p := &PriorityQueue{}
   heap.Init(p)
 
-  heap.Push(p, &Node{ Cost: 2, hash: "abc" })
-  heap.Push(p, &Node{ Cost: 5, hash: "cba" })
+  heap.Push(p, &Node{ h: 2, hash: "abc" })
+  heap.Push(p, &Node{ h: 5, hash: "cba" })
 
-  p.SwapIfLowerCost(&Node{ Cost: 4, hash: "cba" })
+  p.SwapIfLowerCost(&Node{ h: 4, hash: "cba" })
 
   var n *Node
 
   n = heap.Pop(p).(*Node)
-  if n.Cost != 2 { t.FailNow() }
+  if n.h != 2 { t.FailNow() }
 
   n = heap.Pop(p).(*Node)
-  if n.Cost != 4 { t.FailNow() }
+  if n.h != 4 { t.FailNow() }
 
   if p.Len() != 0 { t.FailNow() }
 

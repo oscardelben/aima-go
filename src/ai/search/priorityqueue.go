@@ -12,7 +12,7 @@ type PriorityQueue []*Node
 func (pq PriorityQueue) Len() int { return len(pq) }
 
 func (pq PriorityQueue) Less(i, j int) bool {
-  return pq[i].Cost < pq[j].Cost
+  return pq[i].h < pq[j].h
 }
 
 func (pq PriorityQueue) Swap(i, j int) {
@@ -43,7 +43,7 @@ func (pq *PriorityQueue) SwapIfLowerCost(x interface{}) {
 
   for i := 0; i < n; i++ {
     cur := (*pq)[i]
-    if cur.hash == item.hash && cur.Cost > item.Cost {
+    if cur.hash == item.hash && cur.h > item.h {
       heap.Remove(pq, cur.index)
       heap.Push(pq, item)
       return
